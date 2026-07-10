@@ -1,0 +1,20 @@
+# Ignore Node and package files
+node_modules
+npm-debug.log
+dist
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Ignore environments and git
+.env
+.git
+.gitignore
+.dockerignore

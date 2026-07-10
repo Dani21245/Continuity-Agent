@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  continuity_agent_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: continuity_agent_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - SQLITE_DB_PATH=/app/data/continuity_agent.db
+      - FIREWORKS_API_KEY=${FIREWORKS_API_KEY}
+      - FIREWORKS_BASE_URL=${FIREWORKS_BASE_URL}
+    volumes:
+      # Mount local data directory to persist the SQLite database across restarts
+      - sqlite_data:/app/data
+
+volumes:
+  # Named volume for durable SQLite persistence
+  sqlite_data:
