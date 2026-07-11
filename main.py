@@ -241,3 +241,68 @@ async def trigger_sync():
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Sync cycle failed: {str(err)}"
         )
+
+
+@app.get("/metrics", tags=["Analytics"])
+async def get_metrics():
+    """
+    Returns illustrative cost-savings metrics computed from actual logged transaction data.
+
+    Token assumptions per call (not measured — illustrative estimates based on
+    typical prompt/completion lengths for this workload):
+      - Llama 3.1 8B  (simple transactions):  ~160 tokens per call
+      - Llama 3.1 70B (complex transactions): ~260 tokens per call
+
+    Pricing reference: Fireworks AI published rates as of 2026:
+      - Llama 3.1 8B:  $0.20 per 1,000,000 tokens
+      - Llama 3.1 70B: $0.90 per 1,000,000 tokens
+
+    IMPORTANT: These are illustrative estimates based on published pricing and assumed
+    token counts, not measured production token usage. Actual costs may vary depending
+    on prompt length, response verbosity, and live Fireworks AI pricing.
+
+    Returns:
+      total_transactions          — all transactions recorded in the DB
+      simple_count                — routed through Llama 3.1 8B (fast, cheap path)
+      complex_count               — routed through Llama 3.1 70B (audit note generated)
+      actual_estimated_cost_usd   — estimated cost via hybrid routing
+      cost_if_all_routed_to_70b_usd — hypothetical cost if every tx used Llama 3.1 70B
+      estimated_savings_percent   — percentage savings from using the hybrid approach
+    """
+    try:
+        # --- Pricing & token constants ---
+        TOKENS_SIMPLE   = 160    # tokens assumed per simple (8B) call
+        TOKENS_COMPLEX  = 260    # tokens assumed per complex (70B) call
+        PRICE_8B_PER_TOKEN  = 0.20 / 1_000_000   # $0.000000200 per token
+        PRICE_70B_PER_TOKEN = 0.90 / 1_000_000   # $0.000000900 per token
+
+        COST_PER_SIMPLE  = TOKENS_SIMPLE  * PRICE_8B_PER_TOKEN   # ~$0.000032
+        COST_PER_COMPLEX = TOKENS_COMPLEX * PRICE_70B_PER_TOKEN  # ~$0.000234
+        COST_IF_ALL_70B  = TOKENS_COMPLEX * PRICE_70B_PER_TOKEN  # same rate, per tx
+
+        # --- Query DB ---
+        all_transactions = database.get_all_transactions()
+        total            = len(all_transactions)
+        simple_count     = sum(1 for tx in all_transactions if tx.complexity.value == "simple")
+        complex_count    = sum(1 for tx in all_transactions if tx.complexity.value == "complex")
+
+        # --- Cost calculations ---
+        actual_cost    = (simple_count * COST_PER_SIMPLE) + (complex_count * COST_PER_COMPLEX)
+        naive_cost     = total * COST_IF_ALL_70B
+        cost_saved     = naive_cost - actual_cost
+        savings_pct    = round((cost_saved / naive_cost * 100), 2) if naive_cost > 0 else 0.0
+
+        return {
+            "total_transactions":              total,
+            "simple_count":                    simple_count,
+            "complex_count":                   complex_count,
+            "actual_estimated_cost_usd":       round(actual_cost, 8),
+            "cost_if_all_routed_to_70b_usd":   round(naive_cost,  8),
+            "estimated_savings_percent":        savings_pct,
+        }
+
+    except Exception as err:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to compute metrics: {str(err)}"
+        )

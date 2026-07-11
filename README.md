@@ -36,6 +36,8 @@
 ### Interactive Dashboard
 The React dashboard provides real-time transaction monitoring, manual sync control, and a built-in code explorer.
 
+**Note:** the React dashboard is a UI/UX concept demo. Core functionality (offline queue, hybrid AI routing, sync engine) is fully implemented and verifiable directly via the FastAPI backend at /docs (Swagger UI).
+
 <div align="center">
 <i>Live transaction table with AI routing status indicators</i>
 </div>
@@ -146,39 +148,25 @@ Every transaction goes through a cheap classification pass first using **Llama 3
 | High-value or unusual | Llama 3.1 70B | ~60 tokens | $0.0018 | Flagged, audit note written |
 | API unavailable | Rule-based fallback | 0 tokens | $0.0000 | Amount threshold applied |
 
+*Illustrative estimate based on Fireworks AI's published pricing (Llama 3.1 8B: $0.20 per 1M tokens, Llama 3.1 70B: $0.90 per 1M tokens, as of 2026), not measured production usage data.*
+
 **Real-World Example:** A merchant processing 500 transactions/day with 5% flagged = 475 × $0.0001 + 25 × $0.0018 = **$0.09/day** = ~$2.70/month in AI costs.
 
 A merchant processing hundreds of routine sales a day pays for large model reasoning only on the handful that actually need it. And if the Fireworks API is unavailable entirely, the system falls back to rule-based routing — so the core workflow (record → queue → sync) never breaks.
 
 ---
 
-## 📊 Performance & Benchmarks
+### Measured Performance
 
-### Transaction Processing Speed
+Measured on a local development machine (single-user, no concurrent load):
 
-| Operation | Latency | Throughput |
-|---|---|---|
-| Record transaction (offline) | < 10ms | 1000+ tx/sec |
-| Classify with Llama 3.1 8B | ~50-100ms | 20+ tx/sec |
-| Generate audit note with 70B | ~300-500ms | 4+ tx/sec |
-| Rule-based fallback | < 5ms | 2000+ tx/sec |
+| Metric | Value |
+|---|---|
+| POST /transactions — Min | 30.9ms |
+| POST /transactions — Max | 55.2ms |
+| POST /transactions — Average (10 runs) | 43.68ms |
 
-### Resource Usage
-
-| Component | CPU | Memory | Storage |
-|---|---|---|
-| Python Backend (FastAPI) | ~2-5% idle | ~50-100 MB | Minimal |
-| SQLite Database | < 1% | ~10 MB | ~1 KB per transaction |
-| React Dashboard | < 1% | ~30-50 MB | Minimal |
-
-**Tested on:** Standard cloud instance (2 vCPU, 2GB RAM)
-
-### Cost Efficiency
-
-Compared to traditional always-connected systems that require constant API calls:
-- **95% reduction** in AI inference costs through hybrid routing
-- **100% uptime** during network outages (offline queue)
-- **Zero infrastructure dependencies** (SQLite, no separate DB server)
+*Note: these are single-machine, single-user measurements, not a load-tested benchmark under concurrent traffic. Sync/routing latency depends on the Fireworks AI API's response time, which was not independently measured for this submission.*
 
 ---
 
@@ -208,7 +196,6 @@ continuity-agent/
 ├── Dockerfile            # Python 3.11-slim image
 ├── docker-compose.yml    # Service + named volume for SQLite persistence
 ├── .env.example          # Environment variable template
-├── test_fireworks.sh     # Quick Fireworks API key smoke test
 └── src/
     ├── App.tsx           # React dashboard (simulation, code explorer, stats)
     ├── main.tsx          # React entry point
@@ -390,29 +377,7 @@ Copy `.env.example` to `.env` and fill in your values. The system is intentional
 
 ---
 
-## 🔧 Testing the Fireworks API Key
-
-Before running a full sync, verify your Fireworks API key works:
-
-```bash
-chmod +x test_fireworks.sh
-./test_fireworks.sh
-```
-
-This sends a minimal request to the Fireworks API and prints the raw response — useful for debugging connectivity or auth issues.
-
-**On Windows (PowerShell):**
-```powershell
-$env:FIREWORKS_API_KEY = "your_key_here"
-curl https://api.fireworks.ai/inference/v1/chat/completions `
-  -H "Authorization: Bearer $env:FIREWORKS_API_KEY" `
-  -H "Content-Type: application/json" `
-  -d '{"model": "accounts/fireworks/models/llama-v3p1-8b-instruct", "messages": [{"role": "user", "content": "hello"}]}'
-```
-
----
-
-## 🛠️ Troubleshooting
+## ️ Troubleshooting
 
 ### Common Issues
 
@@ -431,7 +396,6 @@ ports:
 
 **Issue**: Transactions not syncing (AI routing not working)
 - Verify your `FIREWORKS_API_KEY` is set correctly in `.env`
-- Check API key is valid by running `./test_fireworks.sh`
 - System will automatically fall back to rule-based routing if API is unavailable
 
 **Issue**: Frontend can't connect to backend
@@ -591,13 +555,13 @@ For bug reports and feature requests, please use the [GitHub Issues](https://git
 
 If this project helps you or your business, please consider:
 - ⭐ **Starring** the repository on GitHub
-- � **Reporting bugs** or suggesting features via Issues
+- 🐛 **Reporting bugs** or suggesting features via Issues
 - 🤝 **Contributing** code, documentation, or translations
 - 📢 **Sharing** with other merchants and developers who might benefit
 
 ---
 
-## �🙏 Acknowledgments
+## 🙏 Acknowledgments
 
 - **AMD Developer Hackathon: ACT II** for providing the platform and resources
 - **Fireworks AI** for hosted inference on AMD Instinct GPUs
