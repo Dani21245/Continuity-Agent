@@ -86,7 +86,7 @@ This hybrid design isn't just a cost-saving trick. It's what makes the system pr
 | Feature | Benefit |
 |---------|---------|
 | 💾 **Offline-First Queue** | Sales never stop being recorded, even with zero connectivity |
-| 🤖 **Hybrid AI Routing** | 95%+ of transactions auto-cleared at near-zero cost |
+| 🤖 **Hybrid AI Routing** | Most routine transactions are cleared without escalation to the larger model |
 | 🛡️ **Graceful Fallback** | Rule-based routing when AI API is unavailable |
 | 📊 **Real-Time Dashboard** | Live transaction monitoring and sync control |
 | 🐳 **One-Command Deploy** | Docker Compose handles everything |
@@ -441,7 +441,7 @@ A: All data is stored locally on the merchant's device. For production deploymen
 - Regular database backups
 
 **Q: What's the transaction throughput?**  
-A: SQLite can handle thousands of transactions per second. The bottleneck is typically the AI API during sync, but the hybrid routing approach processes 95%+ of transactions in milliseconds.
+A: SQLite can handle thousands of transactions per second. The bottleneck is typically the AI API during sync, but the hybrid routing approach means most routine transactions are cleared without escalating to the larger model — keeping costs low for typical merchant workloads.
 
 **Q: Can I run this on a Raspberry Pi?**  
 A: Yes! The Python backend runs on ARM architecture. Just use the appropriate base image in the Dockerfile.
