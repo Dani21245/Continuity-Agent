@@ -800,7 +800,17 @@ export default function App() {
       {/* Primary Sophisticated Dark Header */}
       <header className="h-16 flex items-center justify-between px-6 sm:px-8 bg-[#0D0D0F] border-b border-white/5 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center text-black font-black text-xl select-none shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+          <img 
+            src="/logo.png" 
+            alt="Continuity Agent Logo" 
+            className="w-10 h-10 object-contain rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.2)]" 
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextSibling as HTMLElement;
+              if (fallback) fallback.style.display = 'flex';
+            }}
+          />
+          <div className="w-9 h-9 bg-amber-500 rounded-lg hidden items-center justify-center text-black font-black text-xl select-none shadow-[0_0_15px_rgba(245,158,11,0.2)]">
             C
           </div>
           <div>

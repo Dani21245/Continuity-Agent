@@ -8,3 +8,8 @@ coverage/
 !.env.example
 __pycache__/
 *.pyc
+
+# SQLite database — local data, not for version control
+*.db
+*.sqlite
+*.sqlite3
